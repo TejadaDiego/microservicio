@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: notas_db
+    ports:
+      - "3307:3306"
+
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+
+  notas-service:
+    build: .
+    container_name: notas-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - eureka-server
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/notas_db
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8085:8085"
+    depends_on:
+      - notas-service
+      - eureka-server
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
